@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Brew Awesome Coffee Tool</title>
+  <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'>
+
+<style type="text/css">
+  html, body, #wrapper { margin: 0; padding: 0; height: 100%; font: menu; }
+  * { -moz-box-sizing: border-box; box-sizing: border-box; }
+  p { margin: 0; }
+
+  .it-does-not-work { padding-top:25%; text-align: center; }
+
+  .toolbar {
+    height: 15%;
+  }
+  .toolbar-form,
+  .toolbar-form-fieldset {
+    height: 100%;
+    margin:  0;
+    padding: 0;
+    border:  0;
+  }
+  .input-container {
+    display: inline-block;
+    height: 100%;
+    width: 25%;
+    margin:  0;
+    padding: 0;
+  }
+  .toolbar-label {
+    position: absolute;
+    padding: 7px 0 0 10px;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 1px;
+    color: rgba(0, 0, 0, 0.3);
+  }
+  .toolbar-input {
+    outline: none;
+    height: 100%;
+    width:  100%;
+    margin:  0;
+    padding: 0;
+    border:  0;
+    background: none;
+    border-right: 1px solid whitesmoke;
+    border-bottom: 1px solid whitesmoke;
+    text-align: center;
+    font-weight: lighter;
+    font-size: 300%;
+  }
+  .toolbar-input:focus {
+    background-color: #d0bc7c;
+  }
+  .toolbar-input:disabled {
+    background-color: whitesmoke;
+  }
+
+  .chart-container {
+    height: 84.9%;
+  }
+  .chart {
+    height: 100%;
+    font-size: .8em;
+    fill: lightgray;
+  }
+
+  @media (-webkit-min-device-pixel-ratio: 2) {
+    /*.toolbar-input {
+      border-width: 0.5px;
+    }*/
+  }
+
+  @media only screen and (min-device-width: 320px) and (max-device-width: 620px),
+         only screen and (min-width: 320px) and (max-width: 620px) {
+    .toolbar {
+      height: 26%;
+    }
+    .input-container {
+      height: 50%;
+      width: 50%;
+    }
+    .chart-container {
+      height: 73.9%;
+    }
+  }
+</style>
+</head>
+<body>
+  <div id="wrapper">
+    <div class="toolbar">
+      <form class="toolbar-form">
+        <fieldset class="toolbar-form-fieldset">
+          <div class="input-container">
+            <label class="toolbar-label" for="dose">Dose, g</label
+            ><input
+              type="number"
+              id="dose"
+              name="dose"
+              class="toolbar-input"
+              value="18.0"
+              placeholder="Dose, g">
+          </div><div class="input-container">
+            <label class="toolbar-label" for="beverage">Beverage, g</label
+            ><input
+              type="number"
+              id="beverage"
+              name="beverage"
+              class="toolbar-input"
+              value="36.0"
+              placeholder="Beverage, g">
+          </div><div class="input-container">
+            <label class="toolbar-label" for="tds">TDS, %</label
+            ><input
+              type="number"
+              id="tds"
+              name="tds"
+              class="toolbar-input"
+              value="10.0"
+              placeholder="TDS, %">
+          </div><div class="input-container">
+            <label class="toolbar-label" for="extraction">Extraction, %</label
+            ><input
+              type="number"
+              id="extraction"
+              name="extraction"
+              class="toolbar-input"
+              value="0.0"
+              placeholder="Extraction, %"
+              disabled="disabled">
+          </div>
+        </fieldset>
+      </form>
+    </div>
+    <div class="chart-container">
+      <div class="chart">
+        <p class="it-does-not-work">Something is wrong. The chart does not work, sorry.</p>
+      </div>
+    </div>
+  </div>
+
+<script type="text/javascript">
+
+  // Dont’t forget '.' for class or '#' for id
+  var nodes = {
+    dose       : document.querySelector('#dose'),
+    beverage   : document.querySelector('#beverage'),
+    tds        : document.querySelector('#tds'),
+    extraction : document.querySelector('#extraction'),
+    chart      : document.querySelector('.chart')
+  };
+
+  var chartModel = {
+    axeXStart : 14,
+    axeXEnd   : 26,
+    espresso  : {
+      axeYStart : 3,
+      axeYEnd   : 20
+    }
+  };
+
+  var primaryColor = '#d0bc7c';
+  var guideColor   = 'whitesmoke';
+  var labelField = 30;
+
+  var chartWidth  = nodes.chart.offsetWidth;
+  var chartHeight = nodes.chart.offsetHeight;
+
+  var labelsXCount = chartModel.axeXEnd - chartModel.axeXStart;
+  var spaceBetweenX = (chartWidth - (labelField + labelField)) / labelsXCount;
+
+  var labelsYCount = chartModel.espresso.axeYEnd - chartModel.espresso.axeYStart;
+  var spaceBetweenY = (chartHeight - (labelField + labelField)) / labelsYCount;
+
+  var view = (function() {
+    function getExtraction(dose, beverage, tds) {
+      return beverage * tds / dose;
+    }
+
+    function getExtractionFromNodes(nodes) {
+      return getExtraction(
+        parseFloat(nodes.dose.value),
+        parseFloat(nodes.beverage.value),
+        parseFloat(nodes.tds.value)
+      );
+    }
+
+    function getSVGLine(x1, y1, x2, y2) {
+      return '<line x1="' + x1 + '" x2="' + x2 + '" y1="' + y1 + '" y2="' + y2 + '" stroke="' + guideColor + '" fill="transparent" stroke-width="1"/>'
+    }
+    function getSVGText(x, y, text) {
+      return '<text text-anchor="middle" x="' + x + '" y="' + y + '">' + text + '</text>';
+    }
+    function getSVGVertLine(x, y1, y2) { return getSVGLine(x, y1, x, y2); }
+    function getSVGHorLine(x1, x2, y)  { return getSVGLine(x1, y, x2, y); }
+
+    function getVertGuide(x, label) {
+      var endY = chartHeight - labelField;
+      return getSVGVertLine(x, labelField, endY) + getSVGText(x, endY + 19, label);
+    }
+
+    function getHorGuide(y, label) {
+      var endX = chartWidth - labelField;
+      return getSVGHorLine(labelField, endX, chartHeight - y) + getSVGText(labelField - 15, chartHeight - y + 3, label);
+    }
+
+    function getSVGPoint(x, y, color) {
+      return '<circle cx="' + x + '" cy="' + y + '" r="10" style="fill:' + color + '"/>';
+    }
+
+    function translateX(x) { return labelField + (x - chartModel.axeXStart) * spaceBetweenX; }
+    function translateY(y) { return chartHeight - (y - chartModel.espresso.axeYStart) * spaceBetweenY - labelField; }
+
+    function getRect(x1, y1, x2, y2, color) {
+      var x = translateX(x1);
+      var y = translateY(y2);
+      var w = translateX(x2) - translateX(x1);
+      var h = translateY(y1) - translateY(y2);
+      return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" stroke="' + color + '" fill="transparent"/>';
+    }
+
+    function render(nodes) {
+      var currentTDS = parseFloat(nodes.tds.value);
+      nodes.tds.value = currentTDS.toFixed(2);
+      var currentExtraction = getExtractionFromNodes(nodes);
+      nodes.extraction.value = currentExtraction.toFixed(2);
+
+      var svgTagOpen  = '<svg version="1.1" baseProfile="full" width="100%" height="100%" style="background-color: white;" xmlns="http://www.w3.org/2000/svg">';
+      var svgTagClose = '</svg>';
+
+      var svgImage = '' + svgTagOpen;
+
+      // Draw vertical guides
+      for (var i = 0; i <= labelsXCount; i++) {
+        svgImage += getVertGuide(labelField + (spaceBetweenX * i), chartModel.axeXStart + i);
+      }
+
+      // Draw horizontal guides
+      for (var i = 0; i <= labelsYCount; i++) {
+        svgImage += getHorGuide(labelField + (spaceBetweenY * i), (chartModel.espresso.axeYStart + i).toFixed(1));
+      }
+
+      svgImage += getRect(18, 8, 22, 12, primaryColor);
+
+      svgImage += getSVGPoint(translateX(currentExtraction), translateY(currentTDS), primaryColor);
+
+      svgImage += svgTagClose;
+
+      nodes.chart.innerHTML = svgImage;
+    }
+
+    return {
+      render : render
+    };
+  })();
+
+  var app = (function() {
+    function init(nodes) {
+      nodes.dose.addEventListener('input',
+        function() { view.render(nodes); }
+      );
+      nodes.beverage.addEventListener('input',
+        function() { view.render(nodes); }
+      );
+      nodes.tds.addEventListener('input',
+        function() { view.render(nodes); }
+      );
+
+      view.render(nodes);
+    }
+
+    return {
+      init : init
+    };
+  })();
+
+  window.onload = function() { app.init(nodes); }
+
+</script>
+</body>
+</html>
