@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
 <style type="text/css">
-  html, body, #wrapper { margin: 0; padding: 0; height: 100%; font: menu; }
+  html, body, #wrapper { margin: 0; padding: 0; height: 100%; font-family: "-apple-system", "Helvetica Neue"; }
   * { -moz-box-sizing: border-box; box-sizing: border-box; }
   p { margin: 0; }
 
@@ -35,8 +35,8 @@
   .toolbar-label {
     position: absolute;
     padding: 7px 0 0 10px;
+    font-size: 0.7em;
     text-transform: uppercase;
-    font-size: 0.8em;
     letter-spacing: 1px;
     color: rgba(0, 0, 0, 0.3);
   }
@@ -47,18 +47,23 @@
     margin:  0;
     padding: 0;
     border:  0;
+    border-radius: 0;
     background: none;
     border-right: 1px solid whitesmoke;
     border-bottom: 1px solid whitesmoke;
     text-align: center;
     font-weight: lighter;
-    font-size: 300%;
+    font-size: 3em;
   }
   .toolbar-input:focus {
     background-color: #d0bc7c;
   }
   .toolbar-input:disabled {
-    background-color: whitesmoke;
+    -webkit-text-fill-color: #d0bc7c;
+    -webkit-opacity: 1;
+  }
+  .result {
+    color: #d0bc7c;
   }
 
   .chart-container {
@@ -66,7 +71,7 @@
   }
   .chart {
     height: 100%;
-    font-size: .8em;
+    font-size: .7em;
     fill: lightgray;
   }
 
@@ -80,10 +85,17 @@
          only screen and (min-width: 320px) and (max-width: 620px) {
     .toolbar {
       height: 26%;
+      border-top: 1px solid whitesmoke;
     }
     .input-container {
       height: 50%;
-      width: 50%;
+      width:  50%;
+    }
+    .toolbar-input {
+      padding-top: 10%;
+      font-family: "-apple-system", "Helvetica Neue";
+      font-weight: 100;
+      font-size: 2.4em;
     }
     .chart-container {
       height: 73.9%;
@@ -124,12 +136,12 @@
               value="10.0"
               placeholder="TDS, %">
           </div><div class="input-container">
-            <label class="toolbar-label" for="extraction">Extraction, %</label
+            <label class="toolbar-label result" for="extraction">Extraction, %</label
             ><input
               type="number"
               id="extraction"
               name="extraction"
-              class="toolbar-input"
+              class="toolbar-input result"
               value="0.0"
               placeholder="Extraction, %"
               disabled="disabled">
