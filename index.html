@@ -74,6 +74,11 @@
     font-size: .7em;
     fill: lightgray;
   }
+  .chart-label {
+    fill: #d0bc7c;
+    font-size: 150%;
+    font-weight: 300;
+  }
 
   @media (-webkit-min-device-pixel-ratio: 2) {
     /*.toolbar-input {
@@ -168,26 +173,33 @@
   };
 
   var chartModel = {
-    axeXStart : 14,
-    axeXEnd   : 26,
-    espresso  : {
-      axeYStart : 3,
-      axeYEnd   : 20
+    currentMode : 'espresso',
+    x : {
+      start : 16,
+      end   : 26,
+      step  : 1
+    },
+    espresso : {
+      start : 4,
+      end   : 14,
+      step  : 1,
+      boundaries: [{ x1: 18.8, y1: 7, x2: 24, y2: 10.4, label: 'Espresso' }]
+    },
+    filter : {
+      start : 0,
+      end   : 3,
+      step  : 0.5,
+      boundaries: [{ x1: 18.8, y1: 1.2, x2: 24, y2: 1.8, label: 'Filter' }]
     }
   };
 
   var primaryColor = '#d0bc7c';
   var guideColor   = 'whitesmoke';
-  var labelField = 30;
+  var labelField   = 30;
 
   var chartWidth  = nodes.chart.offsetWidth;
   var chartHeight = nodes.chart.offsetHeight;
 
-  var labelsXCount = chartModel.axeXEnd - chartModel.axeXStart;
-  var spaceBetweenX = (chartWidth - (labelField + labelField)) / labelsXCount;
-
-  var labelsYCount = chartModel.espresso.axeYEnd - chartModel.espresso.axeYStart;
-  var spaceBetweenY = (chartHeight - (labelField + labelField)) / labelsYCount;
 
   var view = (function() {
     function getExtraction(dose, beverage, tds) {
@@ -201,6 +213,26 @@
         parseFloat(nodes.tds.value)
       );
     }
+
+
+    function getLabelsXCount() {
+      return (chartModel.x.end - chartModel.x.start) / chartModel.x.step;
+    }
+    function getCurrentSpaceBetweenX() {
+      return (chartWidth - (labelField + labelField)) / getLabelsXCount();
+    }
+
+    function getLabelsYCount() {
+      var start = chartModel[chartModel.currentMode].start;
+      var end   = chartModel[chartModel.currentMode].end;
+      var step  = chartModel[chartModel.currentMode].step;
+
+      return (end - start) / step;
+    }
+    function getCurrentSpaceBetweenY() {
+      return (chartHeight - (labelField + labelField)) / getLabelsYCount();
+    }
+
 
     function getSVGLine(x1, y1, x2, y2) {
       return '<line x1="' + x1 + '" x2="' + x2 + '" y1="' + y1 + '" y2="' + y2 + '" stroke="' + guideColor + '" fill="transparent" stroke-width="1"/>'
@@ -218,15 +250,17 @@
 
     function getHorGuide(y, label) {
       var endX = chartWidth - labelField;
-      return getSVGHorLine(labelField, endX, chartHeight - y) + getSVGText(labelField - 15, chartHeight - y + 3, label);
+      return getSVGHorLine(labelField, endX, chartHeight - y) +
+             getSVGText(labelField - 15, chartHeight - y + 3, label);
     }
 
     function getSVGPoint(x, y, color) {
       return '<circle cx="' + x + '" cy="' + y + '" r="10" style="fill:' + color + '"/>';
     }
 
-    function translateX(x) { return labelField + (x - chartModel.axeXStart) * spaceBetweenX; }
-    function translateY(y) { return chartHeight - (y - chartModel.espresso.axeYStart) * spaceBetweenY - labelField; }
+
+    function translateX(x) { return labelField + (x - chartModel.x.start) * (getCurrentSpaceBetweenX() / chartModel.x.step); }
+    function translateY(y) { return chartHeight - (y - chartModel[chartModel.currentMode].start) * (getCurrentSpaceBetweenY() / chartModel[chartModel.currentMode].step) - labelField; }
 
     function getRect(x1, y1, x2, y2, color) {
       var x = translateX(x1);
@@ -238,9 +272,10 @@
 
     function render(nodes) {
       var currentTDS = parseFloat(nodes.tds.value);
-      //nodes.tds.value = currentTDS.toFixed(2);
       var currentExtraction = getExtractionFromNodes(nodes);
       nodes.extraction.value = currentExtraction.toFixed(2);
+
+      chartModel.currentMode = (currentTDS < 3.5 ? 'filter' : 'espresso');
 
       var svgTagOpen  = '<svg version="1.1" baseProfile="full" width="100%" height="100%" style="background-color: white;" xmlns="http://www.w3.org/2000/svg">';
       var svgTagClose = '</svg>';
@@ -248,16 +283,47 @@
       var svgImage = '' + svgTagOpen;
 
       // Draw vertical guides
+
+      var labelsXCount = getLabelsXCount();
+      var labelX = chartModel.x.start;
+
       for (var i = 0; i <= labelsXCount; i++) {
-        svgImage += getVertGuide(labelField + (spaceBetweenX * i), chartModel.axeXStart + i);
+        var currentX = labelField + (getCurrentSpaceBetweenX() * i);
+
+        svgImage += getVertGuide(currentX, labelX.toFixed(1));
+
+        labelX += chartModel.x.step;
       }
 
       // Draw horizontal guides
+
+      var labelsYCount = getLabelsYCount();
+      var labelY = chartModel[chartModel.currentMode].start;
+
       for (var i = 0; i <= labelsYCount; i++) {
-        svgImage += getHorGuide(labelField + (spaceBetweenY * i), (chartModel.espresso.axeYStart + i).toFixed(1));
+        var currentY = labelField + (getCurrentSpaceBetweenY() * i);
+
+        svgImage += getHorGuide(currentY, labelY.toFixed(1));
+
+        labelY += chartModel[chartModel.currentMode].step;
       }
 
-      svgImage += getRect(18, 8, 22, 12, primaryColor);
+      for (var i = 0; i < chartModel[chartModel.currentMode].boundaries.length; i++) {
+        var currentRect = chartModel[chartModel.currentMode].boundaries[i];
+
+        svgImage += getRect(
+          currentRect.x1,
+          currentRect.y1,
+          currentRect.x2,
+          currentRect.y2,
+          primaryColor
+        );
+
+        svgImage += '<text class="chart-label" text-anchor="left" x="' +
+                    translateX(currentRect.x1) +
+                    '" y="' + (translateY(currentRect.y2) - 5) + '">' +
+                    currentRect.label + '</text>'
+      }
 
       svgImage += getSVGPoint(translateX(currentExtraction), translateY(currentTDS), primaryColor);
 
