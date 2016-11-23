@@ -221,7 +221,6 @@
   var chartWidth  = nodes.chart.offsetWidth;
   var chartHeight = nodes.chart.offsetHeight;
 
-
   var LS = (function() {
     var localStoragePrefix = 'brew-awesome-';
 
@@ -244,7 +243,7 @@
     function getLabelsXCount() {
       return (chartModel.x.end - chartModel.x.start) / chartModel.x.step;
     }
-    function getCurrentSpaceBetweenX() {
+    function getCurrentSpaceBetweenX(chartWidth) {
       return (chartWidth - (labelField + labelField)) / getLabelsXCount();
     }
 
@@ -255,7 +254,7 @@
 
       return (end - start) / step;
     }
-    function getCurrentSpaceBetweenY() {
+    function getCurrentSpaceBetweenY(chartHeight) {
       return (chartHeight - (labelField + labelField)) / getLabelsYCount();
     }
 
@@ -285,8 +284,8 @@
     }
 
 
-    function translateX(x) { return labelField + (x - chartModel.x.start) * (getCurrentSpaceBetweenX() / chartModel.x.step); }
-    function translateY(y) { return chartHeight - (y - chartModel[appModel.currentMode].start) * (getCurrentSpaceBetweenY() / chartModel[appModel.currentMode].step) - labelField; }
+    function translateX(x) { return labelField + (x - chartModel.x.start) * (getCurrentSpaceBetweenX(chartWidth) / chartModel.x.step); }
+    function translateY(y) { return chartHeight - (y - chartModel[appModel.currentMode].start) * (getCurrentSpaceBetweenY(chartHeight) / chartModel[appModel.currentMode].step) - labelField; }
 
     function getRect(x1, y1, x2, y2, color) {
       var x = translateX(x1);
@@ -305,6 +304,9 @@
 
       nodes.extraction.value = currentExtraction.toFixed(2);
 
+      chartWidth  = nodes.chart.offsetWidth;
+      chartHeight = nodes.chart.offsetHeight;
+
       var svgTagOpen  = '<svg version="1.1" baseProfile="full" width="100%" height="100%" style="background-color: white;" xmlns="http://www.w3.org/2000/svg">';
       var svgTagClose = '</svg>';
 
@@ -316,7 +318,7 @@
       var labelX = chartModel.x.start;
 
       for (var i = 0; i <= labelsXCount; i++) {
-        var currentX = labelField + (getCurrentSpaceBetweenX() * i);
+        var currentX = labelField + (getCurrentSpaceBetweenX(chartWidth) * i);
 
         svgImage += getVertGuide(currentX, labelX.toFixed(1));
 
@@ -329,7 +331,7 @@
       var labelY = chartModel[appModel.currentMode].start;
 
       for (var i = 0; i <= labelsYCount; i++) {
-        var currentY = labelField + (getCurrentSpaceBetweenY() * i);
+        var currentY = labelField + (getCurrentSpaceBetweenY(chartHeight) * i);
 
         svgImage += getHorGuide(currentY, labelY.toFixed(1));
 
@@ -407,6 +409,11 @@
       nodes.dose.addEventListener('input', update);
       nodes.beverage.addEventListener('input', update);
       nodes.tds.addEventListener('input', update);
+
+      window.addEventListener('resize', function() {
+        console.log('resize');
+        view.render();
+      });
 
       view.render();
     }
