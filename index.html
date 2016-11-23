@@ -106,6 +106,22 @@
       height: 73.9%;
     }
   }
+
+  @media only screen
+    and (min-device-width: 320px)
+    and (max-device-width: 480px)
+    and (-webkit-min-device-pixel-ratio: 2)
+    and (orientation: landscape) {
+      .toolbar-label {
+        padding: 3px 0 0 5px;
+        font-size: 0.5em;
+      }
+
+      .toolbar-input {
+        padding-top: 3%;
+        font-size: 1.8em;
+      }
+  }
 </style>
 </head>
 <body>
@@ -191,8 +207,8 @@
       boundaries: [{ x1: 18.8, y1: 7, x2: 24, y2: 10.4, label: 'Espresso' }]
     },
     filter : {
-      start : 0,
-      end   : 3,
+      start : 0.5,
+      end   : 2.5,
       step  : 0.5,
       boundaries: [{ x1: 18.8, y1: 1.2, x2: 24, y2: 1.8, label: 'Filter' }]
     }
