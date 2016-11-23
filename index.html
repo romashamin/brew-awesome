@@ -119,27 +119,21 @@
               type="number"
               id="dose"
               name="dose"
-              class="toolbar-input"
-              value="18.0"
-              placeholder="Dose, g">
+              class="toolbar-input">
           </div><div class="input-container">
             <label class="toolbar-label" for="beverage">Bev / BW, g</label
             ><input
               type="number"
               id="beverage"
               name="beverage"
-              class="toolbar-input"
-              value="36.0"
-              placeholder="Beverage, g">
+              class="toolbar-input">
           </div><div class="input-container">
             <label class="toolbar-label" for="tds">TDS, %</label
             ><input
               type="number"
               id="tds"
               name="tds"
-              class="toolbar-input"
-              value="10.0"
-              placeholder="TDS, %">
+              class="toolbar-input">
           </div><div class="input-container">
             <label class="toolbar-label result" for="extraction">Extraction, %</label
             ><input
@@ -147,8 +141,6 @@
               id="extraction"
               name="extraction"
               class="toolbar-input result"
-              value="0.0"
-              placeholder="Extraction, %"
               disabled="disabled">
           </div>
         </fieldset>
@@ -172,8 +164,21 @@
     chart      : document.querySelector('.chart')
   };
 
+  var initModel = {
+    dose        : '18.0',
+    beverage    : '36.0',
+    tds         : '10.0',
+    currentMode : 'espresso'
+  };
+
+  var appModel = {
+    dose        : '',
+    beverage    : '',
+    tds         : '',
+    currentMode : 'espresso'
+  };
+
   var chartModel = {
-    currentMode : 'espresso',
     x : {
       start : 16,
       end   : 26,
@@ -201,19 +206,24 @@
   var chartHeight = nodes.chart.offsetHeight;
 
 
+  var LS = (function() {
+    var localStoragePrefix = 'brew-awesome-';
+
+    function getLocalStoragePropertyName(property) {
+      return '' + localStoragePrefix + property;
+    }
+
+    return {
+      getLocalStoragePropertyName : getLocalStoragePropertyName
+    };
+  })();
+
+
   var view = (function() {
+
     function getExtraction(dose, beverage, tds) {
       return beverage * tds / dose;
     }
-
-    function getExtractionFromNodes(nodes) {
-      return getExtraction(
-        parseFloat(nodes.dose.value),
-        parseFloat(nodes.beverage.value),
-        parseFloat(nodes.tds.value)
-      );
-    }
-
 
     function getLabelsXCount() {
       return (chartModel.x.end - chartModel.x.start) / chartModel.x.step;
@@ -223,9 +233,9 @@
     }
 
     function getLabelsYCount() {
-      var start = chartModel[chartModel.currentMode].start;
-      var end   = chartModel[chartModel.currentMode].end;
-      var step  = chartModel[chartModel.currentMode].step;
+      var start = chartModel[appModel.currentMode].start;
+      var end   = chartModel[appModel.currentMode].end;
+      var step  = chartModel[appModel.currentMode].step;
 
       return (end - start) / step;
     }
@@ -260,7 +270,7 @@
 
 
     function translateX(x) { return labelField + (x - chartModel.x.start) * (getCurrentSpaceBetweenX() / chartModel.x.step); }
-    function translateY(y) { return chartHeight - (y - chartModel[chartModel.currentMode].start) * (getCurrentSpaceBetweenY() / chartModel[chartModel.currentMode].step) - labelField; }
+    function translateY(y) { return chartHeight - (y - chartModel[appModel.currentMode].start) * (getCurrentSpaceBetweenY() / chartModel[appModel.currentMode].step) - labelField; }
 
     function getRect(x1, y1, x2, y2, color) {
       var x = translateX(x1);
@@ -270,12 +280,14 @@
       return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" stroke="' + color + '" fill="transparent"/>';
     }
 
-    function render(nodes) {
-      var currentTDS = parseFloat(nodes.tds.value);
-      var currentExtraction = getExtractionFromNodes(nodes);
-      nodes.extraction.value = currentExtraction.toFixed(2);
+    function render() {
+      var currentExtraction = getExtraction(
+        parseFloat(appModel.dose),
+        parseFloat(appModel.beverage),
+        parseFloat(appModel.tds)
+      );
 
-      chartModel.currentMode = (currentTDS < 3.5 ? 'filter' : 'espresso');
+      nodes.extraction.value = currentExtraction.toFixed(2);
 
       var svgTagOpen  = '<svg version="1.1" baseProfile="full" width="100%" height="100%" style="background-color: white;" xmlns="http://www.w3.org/2000/svg">';
       var svgTagClose = '</svg>';
@@ -298,18 +310,18 @@
       // Draw horizontal guides
 
       var labelsYCount = getLabelsYCount();
-      var labelY = chartModel[chartModel.currentMode].start;
+      var labelY = chartModel[appModel.currentMode].start;
 
       for (var i = 0; i <= labelsYCount; i++) {
         var currentY = labelField + (getCurrentSpaceBetweenY() * i);
 
         svgImage += getHorGuide(currentY, labelY.toFixed(1));
 
-        labelY += chartModel[chartModel.currentMode].step;
+        labelY += chartModel[appModel.currentMode].step;
       }
 
-      for (var i = 0; i < chartModel[chartModel.currentMode].boundaries.length; i++) {
-        var currentRect = chartModel[chartModel.currentMode].boundaries[i];
+      for (var i = 0; i < chartModel[appModel.currentMode].boundaries.length; i++) {
+        var currentRect = chartModel[appModel.currentMode].boundaries[i];
 
         svgImage += getRect(
           currentRect.x1,
@@ -325,7 +337,7 @@
                     currentRect.label + '</text>'
       }
 
-      svgImage += getSVGPoint(translateX(currentExtraction), translateY(currentTDS), primaryColor);
+      svgImage += getSVGPoint(translateX(currentExtraction), translateY(appModel.tds), primaryColor);
 
       svgImage += svgTagClose;
 
@@ -337,19 +349,50 @@
     };
   })();
 
+
   var app = (function() {
-    function init(nodes) {
-      nodes.dose.addEventListener('input',
-        function() { view.render(nodes); }
+
+    function update(event) {
+      var activeInputID = event.target.id;
+      appModel[activeInputID] = nodes[activeInputID].value;
+
+      appModel.currentMode = (parseFloat(appModel.tds) < 3.5 ? 'filter' : 'espresso');
+
+      localStorage.setItem(
+        LS.getLocalStoragePropertyName('currentMode'),
+        appModel.currentMode
       );
-      nodes.beverage.addEventListener('input',
-        function() { view.render(nodes); }
-      );
-      nodes.tds.addEventListener('input',
-        function() { view.render(nodes); }
+      localStorage.setItem(
+        LS.getLocalStoragePropertyName(activeInputID),
+        appModel[activeInputID]
       );
 
-      view.render(nodes);
+      view.render();
+    }
+
+    function init() {
+      // Try to get values saved earlier in localStorage
+      for (var property in appModel) {
+        var localStoragePropertyName = LS.getLocalStoragePropertyName(property);
+        var storageValue = localStorage.getItem(localStoragePropertyName);
+
+        if (storageValue) {
+          appModel[property] = storageValue;
+        } else {
+          appModel[property] = initModel[property];
+          localStorage.setItem(localStoragePropertyName, appModel[property]);
+        }
+      }
+
+      nodes.dose.value     = appModel.dose;
+      nodes.beverage.value = appModel.beverage;
+      nodes.tds.value      = appModel.tds;
+
+      nodes.dose.addEventListener('input', update);
+      nodes.beverage.addEventListener('input', update);
+      nodes.tds.addEventListener('input', update);
+
+      view.render();
     }
 
     return {
@@ -357,7 +400,7 @@
     };
   })();
 
-  window.onload = function() { app.init(nodes); }
+  window.onload = function() { app.init(); }
 
 </script>
 </body>
