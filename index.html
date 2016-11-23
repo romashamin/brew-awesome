@@ -424,10 +424,7 @@
       nodes.beverage.addEventListener('input', update);
       nodes.tds.addEventListener('input', update);
 
-      window.addEventListener('resize', function() {
-        console.log('resize');
-        view.render();
-      });
+      window.addEventListener('resize', view.render);
 
       view.render();
     }
