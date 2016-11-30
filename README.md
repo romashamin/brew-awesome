@@ -2,11 +2,11 @@
 
 <img width="780" height="446" src="images/brew-awesome-coffee-calculator-cover.gif" title="Brew Awesome Coffee Calculator">
 
-Simple and free online calculator for using with coffee refractometers like Atago PAL-COFFEE or VST LAB.
+Simple and free online calculator for use with coffee refractometers like Atago PAL-COFFEE or VST LAB.
 
 #### [Open Brew Awesome](https://romashamin.github.io/brew-awesome/)
 
-Brew Awesome based on the simplest formula:
+Brew Awesome based on the simplest of formulas:
 
 `Extraction = Beverage * TDS / Dose`
 
