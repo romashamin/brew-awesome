@@ -30,7 +30,7 @@ Where `Beverage` is:
 * Brew Awesome’s user interface properly adapted for the whole range of screens from laptop to phones. And looks beautiful on landscape screen as well.
 * The app hides all the interfering Safari parts if you have run it from the home screen. So be sure you have done all steps from ‘How to use’ section.
 
-[zones of deliciousness]: https://baristahustle.com/vstwtf-part-3/
+[zones of deliciousness]: https://baristahustle.com/blog/vst-wtf-part-3/
 
 ### Does Brew Awesome help?
 
